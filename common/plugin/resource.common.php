@@ -64,7 +64,7 @@ class Smarty_Resource_Common extends Smarty_Resource {
     public function getContent(Smarty_Template_Source $source)
     {
         if ($source->timestamp) {
-            return file_get_contents(FISResource::getUri($this->namespace . ':' . $source->name, $source->smarty));
+            return file_get_contents(FISResource::getTemplate($this->namespace . ':' . $source->name, $source->smarty));
         }
         if ($source instanceof Smarty_Config_Source) {
             throw new SmartyException("Unable to read config {$source->type} '{$source->name}'");

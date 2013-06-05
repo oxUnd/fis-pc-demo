@@ -10,12 +10,15 @@ class FISResource {
     //收集require.async组件
     private static $requireAsyncCollection = array();
     private static $arrScriptPool = array();
+
+    public static $framework = null;
     
     public static function reset(){
         self::$arrMap = array();
         self::$arrLoaded = array();
         self::$arrStaticCollection = array();
         self::$arrScriptPool = array();
+        self::$framework  = null;
     }
     
     public static function cssHook(){
@@ -31,6 +34,10 @@ class FISResource {
         return $strContent;
     }
 
+    public static function setFramework($strFramework) {
+        self::$framework = $strFramework;
+    }
+
     public static function getUri($strName, $smarty) {
         $intPos = strpos($strName, ':');
         if($intPos === false){
@@ -42,9 +49,14 @@ class FISResource {
             $arrMap = &self::$arrMap[$strNamespace];
             $arrRes = &$arrMap['res'][$strName];
             if (isset($arrRes)) {
-                return $smarty->joined_template_dir . substr($strName, $intPos + 1);
+                return $arrRes['uri'];
             }
         }
+    }
+
+    public static function getTemplate($strName, $smarty) {
+        //绝对路径
+        return $smarty->joined_template_dir . str_replace('/template', '', self::getUri($strName, $smarty));
     }
 
     public static function render($type){
@@ -52,21 +64,22 @@ class FISResource {
         if(!empty(self::$arrStaticCollection[$type])){
             $arrURIs = &self::$arrStaticCollection[$type];
             if($type === 'js'){
-                foreach ($arrURIs as $uri) {
-                    //require.resourceMap要在mod.js加载以后执行
-                    if (preg_match('/\/mod\.js$/i', $uri)) {
-                        $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
-                        $resourceMap = self::getResourceMap();
-                        if ($resourceMap) {
-                            $html .= '<script type="text/javascript">';
-                            $html .= 'require.resourceMap('.$resourceMap.');';
-                            $html .= '</script>';
-                        }
-                    } else {
-                        $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
+                //require.resourceMap要在mod.js加载以后执行
+                if (self::$framework) {
+                    $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
+                    $resourceMap = self::getResourceMap();
+                    if ($resourceMap) {
+                        $html .= '<script type="text/javascript">';
+                        $html .= 'require.resourceMap('.$resourceMap.');';
+                        $html .= '</script>';
                     }
                 }
-                //$html = '<script type="text/javascript" src="' . implode('"></script><script type="text/javascript" src="', $arrURIs) . '"></script>';
+                foreach ($arrURIs as $uri) {
+                    if ($uri === self::$framework) {
+                        continue;
+                    }
+                    $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
+                }
             } else if($type === 'css'){
                 $html = '<link rel="stylesheet" type="text/css" href="' . implode('"/><link rel="stylesheet" type="text/css" href="', $arrURIs) . '"/>';
             }
