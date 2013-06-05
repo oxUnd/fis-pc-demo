@@ -8,7 +8,7 @@
     <code>
         &lt;script type="text/javascript"&gt;
         document.getElementById('btn').onclick = function() {
-                require.async(['photo:respClick'], function(resp) {
+                require.async(['/static/photo/ui/respClick/respClick.js'], function(resp) {
                 resp.hello();
             });
         };
@@ -18,9 +18,10 @@
     <button id="btn">Button</button>
     {%script type="text/javascript"%}
         document.getElementById('btn').onclick = function() {
-            require.async(['photo:respClick'], function(resp) {
+            require.async(['/static/photo/ui/respClick/respClick.js'], function(resp) {
                 resp.hello();
             });
         };
     {%/script%}
+    {%widget name="photo:widget/photo/renderBox/renderBox.tpl"%}
 {%/block%}
