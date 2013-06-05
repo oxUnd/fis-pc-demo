@@ -1,5 +1,14 @@
+var $ = require('common:static/common/ui/jquery/jquery.js');
 
 exports.init = function() {
-    console.log('menu');
-    require('common:a');
+    $('.menu-ui ul li a').click(function(event) {
+        var self = this;
+        $('.menu-ui ul li a').each(function() {
+            if ($(this).hasClass('active')) {
+                $(this).removeClass('active');
+            }
+        });
+        $(self).addClass('active');
+        event.preventDefault();
+    });
 };
