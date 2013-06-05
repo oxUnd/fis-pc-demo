@@ -2,7 +2,6 @@
 {%html%}
     {%head%}
         <title>{%block name="title"%}测试{%/block%}</title>
-        {%require name="common:static/common/mod.js"%} <!-- base.js -->
         {%block name="meta"%}
         {%/block%}
         {%require name="common:static/common/ui/960/960.css"%}

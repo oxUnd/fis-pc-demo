@@ -1,5 +1,5 @@
 {%extends file="common:page/common/layout/layout.tpl"%}
-
+{%block name="test"%}{%/block%}
 {%block name="main"%}
     {%require name="photo:static/photo/index/index.css"%}
     {%require name="photo:static/photo/index/index.js"%}
@@ -16,7 +16,7 @@
     </code>
 </pre>
     <button id="btn">Button</button>
-    {%script type="text/javascript"%}
+    {%script type="text/javascript" framework="common:static/common/mod.js"%}
         document.getElementById('btn').onclick = function() {
             require.async(['/static/photo/ui/respClick/respClick.js'], function(resp) {
                 resp.hello();
