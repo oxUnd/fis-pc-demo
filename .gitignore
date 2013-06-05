@@ -1,0 +1,11 @@
+/.idea
+/.settings
+/.project
+
+~*
+*.db
+*.bak
+*.tmp
+*.swp
+
+.DS_Store
