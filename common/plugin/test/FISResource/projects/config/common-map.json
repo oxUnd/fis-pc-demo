@@ -11,6 +11,14 @@
             "uri": "/static/common/ui/b/b.js",
             "type": "js",
             "deps": [
+                "common:static/common/ui/c/c.js"
+            ]
+        },
+        "common:static/common/ui/c/c.js": {
+            "uri": "/static/common/ui/b/b.js",
+            "type": "js",
+            "deps": [
+                "common:static/common/ui/a/a.js"
             ]
         },
         "common:static/common/ui/async/async.js": {

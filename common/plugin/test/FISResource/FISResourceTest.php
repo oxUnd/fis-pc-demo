@@ -18,10 +18,6 @@ class FISResourceTest extends SmartyPluginTest {
     public function tearDown() {
     }
 
-    public function testGetAliasFunc() {
-        $func = FISResource::getAliasFunc();
-    }
-
     //test not find ID from map file;
     public function testLoadEmpty() {
         $this->exceptionMessageTest(
@@ -39,27 +35,5 @@ class FISResourceTest extends SmartyPluginTest {
     }
 
     public function testLoadCycle() {
-    }
-
-    public function testShortPath() {
-        $this->assertEqualsIgnoreSeparator(
-            FISResource::getShortPath('common:a', 'js'),
-            'common:static/common/ui/a/a.js'
-        );
-        //tangram
-        $this->assertEqualsIgnoreSeparator(
-            FISResource::getShortPath('tangram:base', 'js'),
-            'common:static/common/lib/tangram/base/base.js'
-        );
-        //fis
-        $this->assertEqualsIgnoreSeparator(
-            FISResource::getShortPath('fis:event', 'js'),
-            'common:static/common/lib/fis/event/event.js'
-        );
-        //magic
-        $this->assertEqualsIgnoreSeparator(
-            FISResource::getShortPath('magic:dialog', 'js'),
-            'common:static/common/lib/magic/dialog/dialog.js'
-        );
     }
 }

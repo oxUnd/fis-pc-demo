@@ -48,26 +48,6 @@ function smarty_compiler_widget($arrParams,  $smarty){
     }
     if($strName){
         $name = trim($strName, '\'" ');
-        if (!preg_match('/\.tpl$/', $name)) {
-            //widget短路径
-            $intPos = strrpos($name, ':');
-            if ($intPos === false) {
-                trigger_error('widget call must given namespace, in file "' . $smarty->_current_file . '"', E_USER_ERROR);
-            }
-            $namespace = substr($name, 0, $intPos);
-            $prefix = substr($name, $intPos + 1);
-            $intPos = strrpos($prefix, '/');
-            if (false !== $intPos) {
-                $widgetName = substr($prefix, $intPos + 1);
-            } else {
-                $widgetName = $prefix;
-            }
-            if (!$widgetName) {
-                trigger_error('undefined widget name in file "' . $smarty->_current_file . '"', E_USER_ERROR);
-            }
-
-            $strName = "\"$namespace:widget/$namespace/$prefix/$widgetName.tpl\"";
-        }
         $strCode .= '$_tpl_path=FISResource::load(' . $strName . ',$_smarty_tpl->smarty);';
         $strCode .= 'if(isset($_tpl_path)){';
         if($bHasCall){

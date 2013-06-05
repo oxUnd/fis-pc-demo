@@ -10,13 +10,6 @@ class FISResource {
     //收集require.async组件
     private static $requireAsyncCollection = array();
     private static $arrScriptPool = array();
-    private static $libs = array(
-        'tangram',
-        'fis',
-        'magic',
-        'gmu',
-        'wpo'
-    );
     
     public static function reset(){
         self::$arrMap = array();
@@ -49,7 +42,6 @@ class FISResource {
             $arrMap = &self::$arrMap[$strNamespace];
             $arrRes = &$arrMap['res'][$strName];
             if (isset($arrRes)) {
-                //return $smarty->joined_template_dir . $arrRes['uri'];
                 return $smarty->joined_template_dir . substr($strName, $intPos + 1);
             }
         }
@@ -65,7 +57,6 @@ class FISResource {
                     if (preg_match('/\/mod\.js$/i', $uri)) {
                         $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
                         $resourceMap = self::getResourceMap();
-                        $html .= '<script type="text/javascript">' . self::getAliasFunc() . '</script>';
                         if ($resourceMap) {
                             $html .= '<script type="text/javascript">';
                             $html .= 'require.resourceMap('.$resourceMap.');';
@@ -103,28 +94,6 @@ class FISResource {
        return  $ret;
     }
 
-    public static function getAliasFunc() {
-        return 'require.alias = function(id) {
-            var libs = "'.implode(',', self::$libs).'";
-            if (!/\.js$/.test(id)) {
-                id = id.replace(/([^:/]+):((?:[^/]+)|(?:[\s\S]+)?\/([^/]+))$/gi,
-                    function(m, namespace, prefix, compName) {
-                        if (!compName) {
-                            compName = prefix;
-                        }
-                        if (libs.indexOf(namespace) !== -1) {
-                            m = "common:static/common/lib/" + namespace + "/" + prefix + "/" + compName + ".js";
-                        } else {
-                            m = namespace + ":static/" + namespace + "/ui/" + prefix + "/" + compName + ".js";
-                        }
-                        return m;
-                    }
-                );
-            }
-            return id;
-        }';
-    }
-
     public static function register($strNamespace, $smarty){
         if($strNamespace === '__global__'){
             $strMapName = 'map.json';
@@ -142,27 +111,6 @@ class FISResource {
         return false;
     }
 
-    //short path support
-    public static function getShortPath($strName, $type) {
-        if (!preg_match('/\.(?:css|js|tpl|html)$/i', $strName)) {
-            $intPos = strpos($strName, ':');
-            $namespace = substr($strName, 0, $intPos);
-            $prefix = substr($strName, $intPos + 1);
-            $intPos = strrpos($prefix, '/');
-            if (false !== $intPos) {
-                $compName = substr($prefix, $intPos + 1);
-            } else {
-                $compName = $prefix;
-            }
-            if (in_array($namespace, self::$libs)) {
-                $strName = "common:static/common/lib/$namespace/$prefix/$compName.$type";
-            } else {
-                $strName = "$namespace:static/$namespace/ui/$prefix/$compName.$type";
-            }
-        }
-        return $strName;
-    }
-
     public static function loadAsync($strName, $smarty) {
         if (isset(self::$arrLoaded[$strName])) {
             return $strName;
@@ -177,7 +125,7 @@ class FISResource {
                 $arrMap = &self::$arrMap[$strNamespace];
                 $arrRes = &$arrMap['res'][$strName];
                 if (isset($arrRes)) {
-                    self::$arrLoaded[$strName] = true;
+                    self::$arrLoaded[$strName] = $arrRes['uri'];
                     $deps = array();
                     if (isset($arrRes['deps'])) {
                         $deps = $arrRes['deps'];
@@ -188,22 +136,22 @@ class FISResource {
                             //resourceMap不需要css
                             if ($arr['type'] === 'css') {
                                 unset($deps[$key]);
-                                self::$arrStaticCollection[$arr['type']][] = $arr['uri'];
-                                self::$arrLoaded[$uri] = true;
+                                //css 依赖
+                                self::load($uri, $smarty);
                             }
                         } else {
                             unset($deps[$key]);
                         }
                     }
-                    if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
-                        $deps = array_merge($deps, $arrRes['extras']['async']);
-                    }
                     self::$requireAsyncCollection['res'][$strName] = array(
                         'url' => $arrRes['uri'],
                         'deps' => $deps
                     );
+                    if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
+                        $deps = array_merge($deps, $arrRes['extras']['async']);
+                    }
                     foreach ($deps as $uri) {
-                        self::loadAsync(self::getShortPath($uri, 'js'), $arrMap);
+                        self::loadAsync($uri, $smarty);
                     }
                 }
             }
@@ -232,30 +180,30 @@ class FISResource {
                             self::$arrLoaded[$strName] = $strURI;
                         }
                     } else {
+                        $strURI = $arrRes['uri'];
+                        self::$arrLoaded[$strName] = $strURI;
                         //require.async
                         if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
                             foreach ($arrRes['extras']['async'] as $uri) {
-                                self::loadAsync(self::getShortPath($uri, 'js'), $smarty);
+                                self::loadAsync($uri, $smarty);
                             }
                         }
 
                         if(isset($arrRes['deps'])){
                             foreach ($arrRes['deps'] as $strDep) {
-                                self::load(self::getShortPath($strDep, $arrRes['type']), $smarty);
+                                self::load($strDep, $smarty);
                             }
                         }
-                        $strURI = $arrRes['uri'];
-                        self::$arrLoaded[$strName] = $strURI;
                     }
                     self::$arrStaticCollection[$arrRes['type']][] = $strURI;
                     return $strURI;
                 } else {
-                    trigger_error('undefined resource "' . $strName . '"', E_USER_ERROR);
+                    trigger_error('undefined resource "' . $strName . '"', E_USER_NOTICE);
                 }
             } else {
-                trigger_error('missing map file of "' . $strNamespace . '"', E_USER_ERROR);
+                trigger_error('missing map file of "' . $strNamespace . '"', E_USER_NOTICE);
             }
         }
-        trigger_error('unknown resource load error', E_USER_ERROR);
+        trigger_error('unknown resource load error', E_USER_NOTICE);
     }
 }
