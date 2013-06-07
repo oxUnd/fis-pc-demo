@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-{%html%}
+{%html framework="common:static/common/mod.js"%}
     {%head%}
-        <title>{%block name="title"%}测试{%/block%}</title>
+        <title>{%block name="title"%}{%$title%}{%/block%}</title>
         {%block name="meta"%}
         {%/block%}
         {%require name="common:static/common/ui/960/960.css"%}

@@ -1,3 +1,6 @@
 fis.config.merge({
-    namespace: 'common'
+    namespace: 'common',
+    pack : {
+        '/static/aio.js' : ['widget/**.js', /ui\/.*\.js$/i]
+    }
 });

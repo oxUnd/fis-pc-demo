@@ -61,19 +61,22 @@ class FISResource {
 
     public static function render($type){
         $html = '';
+        if (!empty(self::$requireAsyncCollection) && $type === 'js') {
+            //require.resourceMap要在mod.js加载以后执行
+            if (self::$framework) {
+                $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
+                $resourceMap = self::getResourceMap();
+                if ($resourceMap) {
+                    $html .= '<script type="text/javascript">';
+                    $html .= 'require.resourceMap('.$resourceMap.');';
+                    $html .= '</script>';
+                }
+            }
+        }
+
         if(!empty(self::$arrStaticCollection[$type])){
             $arrURIs = &self::$arrStaticCollection[$type];
-            if($type === 'js'){
-                //require.resourceMap要在mod.js加载以后执行
-                if (self::$framework) {
-                    $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
-                    $resourceMap = self::getResourceMap();
-                    if ($resourceMap) {
-                        $html .= '<script type="text/javascript">';
-                        $html .= 'require.resourceMap('.$resourceMap.');';
-                        $html .= '</script>';
-                    }
-                }
+            if($type === 'js') {
                 foreach ($arrURIs as $uri) {
                     if ($uri === self::$framework) {
                         continue;
