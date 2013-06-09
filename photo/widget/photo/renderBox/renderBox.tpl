@@ -1,5 +1,5 @@
 <div>
-    <img src="./renderBox.png?__inline" />
+    <img src="./renderBox.png" />
     <button id="render-btn">Click ME!</button>
     {%script type="text/javascript"%}
         document.getElementById('render-btn').onclick = function() {

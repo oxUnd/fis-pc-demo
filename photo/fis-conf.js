@@ -1,3 +1,8 @@
 fis.config.merge({
-    namespace: 'photo'
+    namespace: 'photo',
+    pack: {
+        '/static/photo/aio.js': [
+            "**.js"
+        ]
+    }
 });
