@@ -6,9 +6,10 @@ class FISResource {
     
     private static $arrMap = array();
     private static $arrLoaded = array();
+    private static $arrAsyncDepLoaded = array();
     private static $arrStaticCollection = array();
     //收集require.async组件
-    private static $requireAsyncCollection = array();
+    private static $arrRequireAsyncCollection = array();
     private static $arrScriptPool = array();
 
     public static $framework = null;
@@ -66,14 +67,14 @@ class FISResource {
             if (self::$framework) {
                 $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
             }
-            if (!empty(self::$requireAsyncCollection)) {
-                $resourceMap = self::getResourceMap();
+            $resourceMap = self::getResourceMap();
+            if ($resourceMap) {
                 $html .= '<script type="text/javascript">';
                 $html .= 'require.resourceMap('.$resourceMap.');';
                 $html .= '</script>';
             }
         }
-
+        file_put_contents('/tmp/fis.log', var_export(self::$arrStaticCollection, true) . PHP_EOL);
         if(!empty(self::$arrStaticCollection[$type])){
             $arrURIs = &self::$arrStaticCollection[$type];
             if($type === 'js') {
@@ -104,8 +105,25 @@ class FISResource {
 
     public static function getResourceMap() {
         $ret = '';
-        if (self::$requireAsyncCollection) {
-            $ret = str_replace('\\/', '/', json_encode(self::$requireAsyncCollection));
+        if (self::$arrRequireAsyncCollection) {
+            $arrResourceMap = array();
+            foreach (self::$arrRequireAsyncCollection as $id => $arrRes) {
+                $deps = array();
+                if (!empty($arrRes['deps'])) {
+                    foreach ($arrRes['deps'] as $strName) {
+                        //这儿搓一把，这样判断是否是css有可能不准 @TODO
+                        if (preg_match('/\.css$/i', $strName)) {
+                            continue;
+                        }
+                        $deps[] = $strName;
+                    }
+                }
+                $arrResourceMap['res'][$id] = array(
+                    'url' => $arrRes['uri'],
+                    'deps' => $deps
+                );
+            }
+            $ret = str_replace('\\/', '/', json_encode($arrResourceMap));
         }
        return  $ret;
     }
@@ -127,55 +145,52 @@ class FISResource {
         return false;
     }
 
-    public static function loadAsync($strName, $smarty) {
-        if (isset(self::$arrLoaded[$strName])) {
-            return $strName;
-        } else {
-            $intPos = strpos($strName, ':');
-            if($intPos === false){
-                $strNamespace = '__global__';
-            } else {
-                $strNamespace = substr($strName, 0, $intPos);
+    /**
+     * 分析组件依赖
+     * @param array $arrRes  组件信息
+     * @param Object $smarty  smarty对象
+     * @param bool $async   是否异步
+     */
+    private static function loadDeps($arrRes, $smarty, $async) {
+        //require.async
+        if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
+            /** 同一个文件内，异步比同步优先
+             * 原因是编译时会把模板同名js、css关联进来，
+             * 再在模板文件异步同名组件时就不是用户想要的了。
+             */
+            $arrRes['deps'] = array_diff($arrRes['deps'], $arrRes['extras']['async']);
+
+            foreach ($arrRes['extras']['async'] as $uri) {
+                self::load($uri, $smarty, true);
             }
-            if(isset(self::$arrMap[$strNamespace]) || self::register($strNamespace, $smarty)){
-                $arrMap = &self::$arrMap[$strNamespace];
-                $arrRes = &$arrMap['res'][$strName];
-                if (isset($arrRes)) {
-                    self::$arrLoaded[$strName] = $arrRes['uri'];
-                    $deps = array();
-                    if (isset($arrRes['deps'])) {
-                        $deps = $arrRes['deps'];
-                    }
-                    foreach ($deps as $key => $uri) {
-                        $arr = $arrMap['res'][$uri];
-                        if (isset($arr)) {
-                            //resourceMap不需要css
-                            if ($arr['type'] === 'css') {
-                                unset($deps[$key]);
-                                //css 依赖
-                                self::load($uri, $smarty);
-                            }
-                        } else {
-                            unset($deps[$key]);
-                        }
-                    }
-                    self::$requireAsyncCollection['res'][$strName] = array(
-                        'url' => $arrRes['uri'],
-                        'deps' => $deps
-                    );
-                    if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
-                        $deps = array_merge($deps, $arrRes['extras']['async']);
-                    }
-                    foreach ($deps as $uri) {
-                        self::loadAsync($uri, $smarty);
-                    }
-                }
+        }
+        if(isset($arrRes['deps'])){
+            foreach ($arrRes['deps'] as $strDep) {
+                self::load($strDep, $smarty, $async);
             }
         }
     }
 
-    public static function load($strName, $smarty){
+    public static function load($strName, $smarty, $async = false){
         if(isset(self::$arrLoaded[$strName])) {
+            //同步组件优先级比异步组件高
+            if (!$async && isset(self::$arrAsyncDepLoaded[$strName])) {
+                $arrRes = self::$arrRequireAsyncCollection[$strName];
+                if (isset($arrRes['pkg'])) {
+                } else {
+                    if ($arrRes['deps']) {
+                        foreach ($arrRes['deps'] as $strDep) {
+                            if (self::$arrAsyncDepLoaded[$strDep]) {
+                                //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
+                                self::$arrStaticCollection['js'][] = self::$arrAsyncDepLoaded[$strDep];
+                                unset(self::$arrRequireAsyncCollection[$strDep]);
+                            }
+                        }
+                    }
+                }
+                self::$arrStaticCollection['js'][] = self::$arrAsyncDepLoaded[$strName];
+                unset(self::$arrRequireAsyncCollection[$strName]);
+            }
             return self::$arrLoaded[$strName];
         } else {
             $intPos = strpos($strName, ':');
@@ -192,26 +207,26 @@ class FISResource {
                         $arrPkg = &$arrMap['pkg'][$arrRes['pkg']];
                         $strURI = $arrPkg['uri'];
                         foreach ($arrPkg['has'] as $strResId) {
-                            //todo
                             self::$arrLoaded[$strName] = $strURI;
+                        }
+                        foreach ($arrPkg['has'] as $strResId) {
+                            $arrHasRes = &$arrMap[$strResId];
+                            if ($arrHasRes) {
+                                self::loadDeps($arrHasRes, $smarty, $async);
+                            }
                         }
                     } else {
                         $strURI = $arrRes['uri'];
                         self::$arrLoaded[$strName] = $strURI;
-                        //require.async
-                        if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
-                            foreach ($arrRes['extras']['async'] as $uri) {
-                                self::loadAsync($uri, $smarty);
-                            }
-                        }
-
-                        if(isset($arrRes['deps'])){
-                            foreach ($arrRes['deps'] as $strDep) {
-                                self::load($strDep, $smarty);
-                            }
-                        }
+                        self::loadDeps($arrRes, $smarty, $async);
                     }
-                    self::$arrStaticCollection[$arrRes['type']][] = $strURI;
+
+                    if ($async && $arrRes['type'] === 'js') {
+                        self::$arrRequireAsyncCollection[$strName] = $arrRes;
+                        self::$arrAsyncDepLoaded[$strName] = $strURI;
+                    } else {
+                        self::$arrStaticCollection[$arrRes['type']][] = $strURI;
+                    }
                     return $strURI;
                 } else {
                     trigger_error('undefined resource "' . $strName . '"', E_USER_NOTICE);
