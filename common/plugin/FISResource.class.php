@@ -6,7 +6,6 @@ class FISResource {
     
     private static $arrMap = array();
     private static $arrLoaded = array();
-    private static $arrAsyncDepLoaded = array();
     private static $arrStaticCollection = array();
     //收集require.async组件
     private static $arrRequireAsyncCollection = array();
@@ -164,25 +163,28 @@ class FISResource {
         }
     }
 
+    /**=
+     * @param $strName
+     */
+    private static function delAsyncDeps($strName) {
+        $arrRes = self::$arrRequireAsyncCollection[$strName];
+        if ($arrRes['deps']) {
+            foreach ($arrRes['deps'] as $strDep) {
+                if (isset(self::$arrRequireAsyncCollection[$strDep])) {
+                    self::delAsyncDeps($strDep);
+                }
+            }
+        }
+        //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
+        self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection[$strName]['uri'];
+        unset(self::$arrRequireAsyncCollection[$strName]);
+    }
+
     public static function load($strName, $smarty, $async = false){
         if(isset(self::$arrLoaded[$strName])) {
             //同步组件优先级比异步组件高
-            if (!$async && isset(self::$arrAsyncDepLoaded[$strName])) {
-                $arrRes = self::$arrRequireAsyncCollection[$strName];
-                if (isset($arrRes['pkg'])) {
-                } else {
-                    if ($arrRes['deps']) {
-                        foreach ($arrRes['deps'] as $strDep) {
-                            if (self::$arrAsyncDepLoaded[$strDep]) {
-                                //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
-                                self::$arrStaticCollection['js'][] = self::$arrAsyncDepLoaded[$strDep];
-                                unset(self::$arrRequireAsyncCollection[$strDep]);
-                            }
-                        }
-                    }
-                }
-                self::$arrStaticCollection['js'][] = self::$arrAsyncDepLoaded[$strName];
-                unset(self::$arrRequireAsyncCollection[$strName]);
+            if (!$async && isset(self::$arrRequireAsyncCollection[$strName])) {
+                self::delAsyncDeps($strName);
             }
             return self::$arrLoaded[$strName];
         } else {
@@ -216,18 +218,30 @@ class FISResource {
 
                     if ($async && $arrRes['type'] === 'js') {
                         self::$arrRequireAsyncCollection[$strName] = $arrRes;
-                        self::$arrAsyncDepLoaded[$strName] = $strURI;
                     } else {
                         self::$arrStaticCollection[$arrRes['type']][] = $strURI;
                     }
                     return $strURI;
                 } else {
-                    trigger_error('undefined resource "' . $strName . '"', E_USER_NOTICE);
+                    self::triggerError('undefined resource "' . $strName . '"', E_USER_NOTICE);
                 }
             } else {
-                trigger_error('missing map file of "' . $strNamespace . '"', E_USER_NOTICE);
+                self::triggerError('missing map file of "' . $strNamespace . '"', E_USER_NOTICE);
             }
         }
-        trigger_error('unknown resource load error', E_USER_NOTICE);
+        self::triggerError('unknown resource load error', E_USER_NOTICE);
+    }
+
+    private static function triggerError($strName, $strMessage) {
+        $arrExt = array(
+            'js',
+            'css',
+            'tpl',
+            'html',
+            'xhtml',
+        );
+        if (preg_match('/\.('.implode('|', $arrExt).')$/', $strName)) {
+            trigger_error(date('Y-m-d H:i:s') . '   ' . $strMessage);
+        }
     }
 }
