@@ -74,7 +74,6 @@ class FISResource {
                 $html .= '</script>';
             }
         }
-        file_put_contents('/tmp/fis.log', var_export(self::$arrStaticCollection, true) . PHP_EOL);
         if(!empty(self::$arrStaticCollection[$type])){
             $arrURIs = &self::$arrStaticCollection[$type];
             if($type === 'js') {
