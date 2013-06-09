@@ -154,12 +154,6 @@ class FISResource {
     private static function loadDeps($arrRes, $smarty, $async) {
         //require.async
         if (isset($arrRes['extras']) && isset($arrRes['extras']['async'])) {
-            /** 同一个文件内，异步比同步优先
-             * 原因是编译时会把模板同名js、css关联进来，
-             * 再在模板文件异步同名组件时就不是用户想要的了。
-             */
-            $arrRes['deps'] = array_diff($arrRes['deps'], $arrRes['extras']['async']);
-
             foreach ($arrRes['extras']['async'] as $uri) {
                 self::load($uri, $smarty, true);
             }
