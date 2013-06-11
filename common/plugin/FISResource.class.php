@@ -163,7 +163,8 @@ class FISResource {
         }
     }
 
-    /**=
+    /**
+     * 已经分析到的组件在后续被同步使用时在异步组里删除。
      * @param $strName
      */
     private static function delAsyncDeps($strName) {
@@ -180,6 +181,13 @@ class FISResource {
         unset(self::$arrRequireAsyncCollection[$strName]);
     }
 
+    /**
+     * 加载组件以及组件依赖
+     * @param $strName      id
+     * @param $smarty       smarty对象
+     * @param bool $async   是否为异步组件（only JS）
+     * @return mixed
+     */
     public static function load($strName, $smarty, $async = false){
         if(isset(self::$arrLoaded[$strName])) {
             //同步组件优先级比异步组件高
@@ -223,16 +231,23 @@ class FISResource {
                     }
                     return $strURI;
                 } else {
-                    self::triggerError('undefined resource "' . $strName . '"', E_USER_NOTICE);
+                    self::triggerError($strName, 'undefined resource "' . $strName . '"', E_USER_NOTICE);
                 }
             } else {
-                self::triggerError('missing map file of "' . $strNamespace . '"', E_USER_NOTICE);
+                self::triggerError($strName, 'missing map file of "' . $strNamespace . '"', E_USER_NOTICE);
             }
         }
-        self::triggerError('unknown resource load error', E_USER_NOTICE);
+        self::triggerError($strName, 'unknown resource load error', E_USER_NOTICE);
     }
 
-    private static function triggerError($strName, $strMessage) {
+    /**
+     * 用户代码自定义js组件，其没有对应的文件
+     * 只有有后缀的组件找不到时进行报错
+     * @param $strName       组件ID
+     * @param $strMessage    错误信息
+     * @param $errorLevel    错误level
+     */
+    private static function triggerError($strName, $strMessage, $errorLevel) {
         $arrExt = array(
             'js',
             'css',
@@ -241,7 +256,7 @@ class FISResource {
             'xhtml',
         );
         if (preg_match('/\.('.implode('|', $arrExt).')$/', $strName)) {
-            trigger_error(date('Y-m-d H:i:s') . '   ' . $strMessage);
+            trigger_error(date('Y-m-d H:i:s') . '   ' . $strMessage, $errorLevel);
         }
     }
 }
