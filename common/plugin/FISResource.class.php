@@ -1,9 +1,9 @@
 <?php
 
 class FISResource {
-    
+
     const CSS_LINKS_HOOK = '<!--[FIS_CSS_LINKS_HOOK]-->';
-    
+
     private static $arrMap = array();
     private static $arrLoaded = array();
     private static $arrStaticCollection = array();
@@ -12,7 +12,7 @@ class FISResource {
     private static $arrScriptPool = array();
 
     public static $framework = null;
-    
+
     public static function reset(){
         self::$arrMap = array();
         self::$arrLoaded = array();
@@ -20,11 +20,11 @@ class FISResource {
         self::$arrScriptPool = array();
         self::$framework  = null;
     }
-    
+
     public static function cssHook(){
         return self::CSS_LINKS_HOOK;
     }
-    
+
     public static function renderResponse($strContent){
         $intPos = strpos($strContent, self::CSS_LINKS_HOOK);
         if($intPos !== false){
@@ -88,11 +88,11 @@ class FISResource {
         }
         return $html;
     }
-    
+
     public static function addScriptPool($str){
         self::$arrScriptPool[] = $str;
     }
-    
+
     public static function renderScriptPool(){
         $html = '';
         if(!empty(self::$arrScriptPool)){
@@ -109,7 +109,7 @@ class FISResource {
                 $deps = array();
                 if (!empty($arrRes['deps'])) {
                     foreach ($arrRes['deps'] as $strName) {
-                        if ($arrRes['type'] !== 'css') {
+                        if ($arrRes['type'] === 'css') {
                             continue;
                         }
                         $deps[] = $strName;
