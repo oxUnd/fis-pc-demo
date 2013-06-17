@@ -109,8 +109,7 @@ class FISResource {
                 $deps = array();
                 if (!empty($arrRes['deps'])) {
                     foreach ($arrRes['deps'] as $strName) {
-                        //这儿搓一把，这样判断是否是css有可能不准 @TODO
-                        if (preg_match('/\.css$/i', $strName)) {
+                        if ($arrRes['type'] !== 'css') {
                             continue;
                         }
                         $deps[] = $strName;
