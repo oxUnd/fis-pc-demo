@@ -101,7 +101,7 @@ class FISResource {
     public static function renderScriptPool(){
         $html = '';
         if(!empty(self::$arrScriptPool)){
-            $html = '<script type="text/javascript">(function(){' . implode("})();\n(function(){", self::$arrScriptPool) . '})();</script>';
+            $html = '<script type="text/javascript">!function(){' . implode("}();\n!function(){", self::$arrScriptPool) . '}();</script>';
         }
         return $html;
     }
