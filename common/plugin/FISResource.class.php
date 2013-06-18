@@ -49,7 +49,12 @@ class FISResource {
             $arrMap = &self::$arrMap[$strNamespace];
             $arrRes = &$arrMap['res'][$strName];
             if (isset($arrRes)) {
-                return $arrRes['uri'];
+                if (isset($arrRes['pkg'])) {
+                    $arrPkg = &$arrMap['pkg'][$arrRes['pkg']];
+                    return $arrPkg['uri'];
+                } else {
+                    return $arrRes['uri'];
+                }
             }
         }
     }
