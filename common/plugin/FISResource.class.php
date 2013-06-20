@@ -184,8 +184,20 @@ class FISResource {
     private static function delAsyncDeps($strName) {
         $arrRes = self::$arrRequireAsyncCollection['res'][$strName];
         if ($arrRes['pkg']) {
-            self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']]['uri'];
-            unset(self::$arrStaticCollection['pkg'][$arrRes['pkg']]);
+            $arrPkg = &self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']];
+            if ($arrPkg) {
+                self::$arrStaticCollection['js'][] = $arrPkg['uri'];
+                unset(self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']]);
+                foreach ($arrPkg['has'] as $strHas) {
+                    if (isset(self::$arrRequireAsyncCollection['res'][$strHas])) {
+                        self::delAsyncDeps($strHas);
+                    }
+                }
+            }
+        } else {
+            //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
+            self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection['res'][$strName]['uri'];
+            unset(self::$arrRequireAsyncCollection['res'][$strName]);
         }
         if ($arrRes['deps']) {
             foreach ($arrRes['deps'] as $strDep) {
@@ -194,9 +206,6 @@ class FISResource {
                 }
             }
         }
-        //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
-        self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection['res'][$strName]['uri'];
-        unset(self::$arrRequireAsyncCollection['res'][$strName]);
     }
 
     /**
