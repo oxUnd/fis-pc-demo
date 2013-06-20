@@ -214,10 +214,10 @@ class FISResource {
                         $arrPkg = &$arrMap['pkg'][$arrRes['pkg']];
                         $strURI = $arrPkg['uri'];
                         foreach ($arrPkg['has'] as $strResId) {
-                            self::$arrLoaded[$strName] = $strURI;
+                            self::$arrLoaded[$strResId] = $strURI;
                         }
                         foreach ($arrPkg['has'] as $strResId) {
-                            $arrHasRes = &$arrMap[$strResId];
+                            $arrHasRes = &$arrMap['res'][$strResId];
                             if ($arrHasRes) {
                                 self::loadDeps($arrHasRes, $smarty, $async);
                             }
