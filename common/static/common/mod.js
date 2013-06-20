@@ -2,21 +2,32 @@ var require, define;
 
 (function(self) {
     var head = document.getElementsByTagName('head')[0],
-        resourceMap = {},
         loadingMap = {},
         factoryMap = {},
-        modulesMap = {};
+        modulesMap = {},
+        resMap, pkgMap;
 
 
     function loadScript(id, callback) {
-        var res = resourceMap[id] || {};
+        var res = resMap[id] || {};
+        var url;
 
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = res['url'] || id;
-        head.appendChild(script);
+        var pkgID = res['pkg'];
+        if (pkgID) {
+            url = pkgMap[pkgID]['url'];
+        }
+        else {
+            url = res['url'] || id;
+        }
 
-        var queue = loadingMap[id] || (loadingMap[id] = []);
+        var queue = loadingMap[id];
+        if (!queue) {
+            queue = loadingMap[id] = [];
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = url;
+            head.appendChild(script);
+        }
         queue.push(callback);
     }
 
@@ -45,7 +56,7 @@ var require, define;
         //
         var factory = factoryMap[id];
         if (!factory) {
-            throw new Error('Cannot find module `' + id + '`');
+            throw Error('Cannot find module `' + id + '`');
         }
 
         mod = modulesMap[id] = {
@@ -55,7 +66,7 @@ var require, define;
         //
         // factory: function OR value
         //
-        var ret = (typeof factory === 'function')
+        var ret = (typeof factory == 'function')
                 ? factory.apply(mod, [require, mod['exports'], mod])
                 : factory;
 
@@ -66,7 +77,7 @@ var require, define;
     };
 
     require.async = function(names, callback) {
-        if (typeof names === 'string') {
+        if (typeof names == 'string') {
             names = [names];
         }
         
@@ -91,7 +102,7 @@ var require, define;
                 needNum++;
                 loadScript(dep, updateNeed);
 
-                var child = resourceMap[dep];
+                var child = resMap[dep];
                 if (child) {
                     findNeed(child.deps);
                 }
@@ -99,12 +110,12 @@ var require, define;
         }
 
         function updateNeed() {
-            if (0 === needNum--) {
+            if (0 == needNum--) {
                 var i, args = [];
                 for(i = names.length - 1; i >= 0; --i) {
                     args[i] = require(names[i]);
                 }
-                callback.apply(self, args);
+                callback && callback.apply(self, args);
             }
         }
         
@@ -113,19 +124,8 @@ var require, define;
     };
 
     require.resourceMap = function(obj) {
-        var res = obj['res'];
-        if (res) {
-            for(var k in res) {
-                if (res.hasOwnProperty(k)) {
-                    resourceMap[k] = res[k];
-                }
-            }
-        }
-
-        var pkg = obj['pkg'];
-        if (pkg) {
-            //...
-        }
+        resMap = obj['res'] || {};
+        pkgMap = obj['pkg'] || {};
     };
 
     require.alias = function(id) {return id};
