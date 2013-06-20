@@ -108,9 +108,9 @@ class FISResource {
 
     public static function getResourceMap() {
         $ret = '';
-        if (self::$arrRequireAsyncCollection) {
-            $arrResourceMap = array();
-            foreach (self::$arrRequireAsyncCollection as $id => $arrRes) {
+        $arrResourceMap = array();
+        if (isset(self::$arrRequireAsyncCollection['res'])) {
+            foreach (self::$arrRequireAsyncCollection['res'] as $id => $arrRes) {
                 $deps = array();
                 if (!empty($arrRes['deps'])) {
                     foreach ($arrRes['deps'] as $strName) {
@@ -122,12 +122,22 @@ class FISResource {
                 }
                 $arrResourceMap['res'][$id] = array(
                     'url' => $arrRes['uri'],
+                    'pkg' => isset($arrRes['pkg']) ? $arrRes['pkg'] : '',
                     'deps' => $deps
                 );
             }
+        }
+        if (isset(self::$arrRequireAsyncCollection['pkg'])) {
+            foreach (self::$arrRequireAsyncCollection['pkg'] as $id => $arrRes) {
+                $arrResourceMap['pkg'][$id] = array(
+                    'url'=> $arrRes['uri']
+                );
+            }
+        }
+        if (!empty($arrResourceMap)) {
             $ret = str_replace('\\/', '/', json_encode($arrResourceMap));
         }
-       return  $ret;
+        return  $ret;
     }
 
     public static function register($strNamespace, $smarty){
@@ -172,17 +182,21 @@ class FISResource {
      * @param $strName
      */
     private static function delAsyncDeps($strName) {
-        $arrRes = self::$arrRequireAsyncCollection[$strName];
+        $arrRes = self::$arrRequireAsyncCollection['res'][$strName];
+        if ($arrRes['pkg']) {
+            self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']]['uri'];
+            unset(self::$arrStaticCollection['pkg'][$arrRes['pkg']]);
+        }
         if ($arrRes['deps']) {
             foreach ($arrRes['deps'] as $strDep) {
-                if (isset(self::$arrRequireAsyncCollection[$strDep])) {
+                if (isset(self::$arrRequireAsyncCollection['res'][$strDep])) {
                     self::delAsyncDeps($strDep);
                 }
             }
         }
         //已经分析过的并且在其他文件里同步加载的组件，重新收集在同步输出组
-        self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection[$strName]['uri'];
-        unset(self::$arrRequireAsyncCollection[$strName]);
+        self::$arrStaticCollection['js'][] = self::$arrRequireAsyncCollection['res'][$strName]['uri'];
+        unset(self::$arrRequireAsyncCollection['res'][$strName]);
     }
 
     /**
@@ -195,7 +209,7 @@ class FISResource {
     public static function load($strName, $smarty, $async = false){
         if(isset(self::$arrLoaded[$strName])) {
             //同步组件优先级比异步组件高
-            if (!$async && isset(self::$arrRequireAsyncCollection[$strName])) {
+            if (!$async && isset(self::$arrRequireAsyncCollection['res'][$strName])) {
                 self::delAsyncDeps($strName);
             }
             return self::$arrLoaded[$strName];
@@ -209,6 +223,8 @@ class FISResource {
             if(isset(self::$arrMap[$strNamespace]) || self::register($strNamespace, $smarty)){
                 $arrMap = &self::$arrMap[$strNamespace];
                 $arrRes = &$arrMap['res'][$strName];
+                $arrPkg = null;
+                $arrPkgHas = array();
                 if(isset($arrRes)) {
                     if(isset($arrRes['pkg'])){
                         $arrPkg = &$arrMap['pkg'][$arrRes['pkg']];
@@ -219,6 +235,7 @@ class FISResource {
                         foreach ($arrPkg['has'] as $strResId) {
                             $arrHasRes = &$arrMap['res'][$strResId];
                             if ($arrHasRes) {
+                                $arrPkgHas[$strResId] = $arrHasRes;
                                 self::loadDeps($arrHasRes, $smarty, $async);
                             }
                         }
@@ -229,7 +246,12 @@ class FISResource {
                     }
 
                     if ($async && $arrRes['type'] === 'js') {
-                        self::$arrRequireAsyncCollection[$strName] = $arrRes;
+                        if ($arrPkg) {
+                            self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']] = $arrPkg;
+                            self::$arrRequireAsyncCollection['res'] = array_merge(self::$arrRequireAsyncCollection['res'], $arrPkgHas);
+                        } else {
+                            self::$arrRequireAsyncCollection['res'][$strName] = $arrRes;
+                        }
                     } else {
                         self::$arrStaticCollection[$arrRes['type']][] = $strURI;
                     }
