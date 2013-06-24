@@ -1,8 +1,9 @@
 <?php
+
 class fis_widget_map {
-    
+
     private static $arrCached = array();
-    
+
     public static function lookup(&$strFilename, &$smarty){
         $strPath = self::$arrCached[$strFilename];
         if(isset($strPath)){
@@ -28,44 +29,37 @@ function smarty_compiler_widget($arrParams,  $smarty){
     $bHasCall = isset($strCall);
     $strName = $arrParams['name'];
     unset($arrParams['name']);
+    //construct params
+    $arrFuncParams = array();
+    foreach ($arrParams as $_key => $_value) {
+        if (is_int($_key)) {
+            $arrFuncParams[] = "$_key=>$_value";
+        } else {
+            $arrFuncParams[] = "'$_key'=>$_value";
+        }
+    }
+    $strFuncParams = 'array(' . implode(',', $arrFuncParams) . ')';
     if($bHasCall){
         unset($arrParams['call']);
-        $arrFuncParams = array();
-        foreach ($arrParams as $_key => $_value) {
-            if (is_int($_key)) {
-                $arrFuncParams[] = "$_key=>$_value";
-            } else {
-                $arrFuncParams[] = "'$_key'=>$_value";
-            }
-        }
-        $strFuncParams = 'array(' . implode(',', $arrFuncParams) . ')';
         $strTplFuncName = '\'smarty_template_function_\'.' . $strCall;
         $strCallTplFunc = 'call_user_func('. $strTplFuncName . ',$_smarty_tpl,' . $strFuncParams . ');';
-        
+
         $strCode .= 'if(is_callable('. $strTplFuncName . ')){';
         $strCode .= $strCallTplFunc;
         $strCode .= '}else{';
     }
     if($strName){
-        $name = trim($strName, '\'" ');
         $strCode .= '$_tpl_path=FISResource::load(' . $strName . ',$_smarty_tpl->smarty);';
         $strCode .= 'if(isset($_tpl_path)){';
         if($bHasCall){
-            $strCode .= '$_smarty_tpl->smarty->fetch($_tpl_path);';
+            $strCode .= '$_smarty_tpl->getSubTemplate($_tpl_path, $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, $_smarty_tpl->caching, $_smarty_tpl->cache_lifetime, ' . $strFuncParams . ', Smarty::SCOPE_LOCAL);';
             $strCode .= 'if(is_callable('. $strTplFuncName . ')){';
             $strCode .= $strCallTplFunc;
             $strCode .= '}else{';
             $strCode .= 'trigger_error(\'missing function define "\'.' . $strTplFuncName . '.\'" in tpl "\'.$_tpl_path.\'"\', E_USER_ERROR);';
             $strCode .= '}';
         } else {
-            //保存初始值
-            $strCode .= '$tpl_vars = $_smarty_tpl->tpl_vars;';
-            foreach ($arrParams as $_key => $_value) {
-                $strCode .= '$_smarty_tpl->tpl_vars["' . $_key . '"] = new Smarty_variable(' . $_value . ');';
-            }
-            $strCode .= 'echo $_smarty_tpl->getSubTemplate($_tpl_path, $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, $_smarty_tpl->caching, $_smarty_tpl->cache_lifetime, array(), Smarty::SCOPE_LOCAL);';
-            //还原数据
-            $strCode .= '$_smarty_tpl->tpl_vars = $tpl_vars;';
+            $strCode .= 'echo $_smarty_tpl->getSubTemplate($_tpl_path, $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, $_smarty_tpl->caching, $_smarty_tpl->cache_lifetime, ' . $strFuncParams . ', Smarty::SCOPE_LOCAL);';
         }
         $strCode .= '}else{';
         $strCode .= 'trigger_error(\'unable to locale resource "\'.' . $strName . '.\'"\', E_USER_ERROR);';
