@@ -61,9 +61,9 @@ function smarty_compiler_widget($arrParams,  $smarty){
             //保存初始值
             $strCode .= '$tpl_vars = $_smarty_tpl->tpl_vars;';
             foreach ($arrParams as $_key => $_value) {
-                $strCode .= '$_smarty_tpl->tpl_vars["' . $_key . '"] = ' . $_value . ';';
+                $strCode .= '$_smarty_tpl->tpl_vars["' . $_key . '"] = new Smarty_variable(' . $_value . ');';
             }
-            $strCode .= 'echo $_smarty_tpl->smarty->fetch($_tpl_path);';
+            $strCode .= 'echo $_smarty_tpl->getSubTemplate($_tpl_path, $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, $_smarty_tpl->caching, $_smarty_tpl->cache_lifetime, array(), Smarty::SCOPE_LOCAL);';
             //还原数据
             $strCode .= '$_smarty_tpl->tpl_vars = $tpl_vars;';
         }

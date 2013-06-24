@@ -1,4 +1,4 @@
-
+require('common:static/common/ui/require_c/require_c.js');
 require.async('common:static/common/ui/pkg_1.js', function() {
 
 });

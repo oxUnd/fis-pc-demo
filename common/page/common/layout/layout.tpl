@@ -27,7 +27,7 @@
         </style>
         <div class="container_24">
             <div class="header grid_24">
-                {%widget name="common:widget/common/menu/menu.tpl"%}
+                {%widget name="common:widget/common/menu/menu.tpl" list=$menu.list test=$menu.test%}
             </div>
             <div class="clear"></div>
             <div class="main grid_24">
