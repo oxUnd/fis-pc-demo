@@ -1,1 +1,0 @@
-console.log('ui pkg_2');
