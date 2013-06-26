@@ -16,7 +16,7 @@
     </code>
 </pre>
     <button id="btn">Button</button>
-    {%script type="text/javascript" framework="common:static/common/mod.js"%}
+    {%script type="text/javascript"%}
         document.getElementById('btn').onclick = function() {
             require.async(['/widget/ui/respClick/respClick.js'], function(resp) {
                 resp.hello();
