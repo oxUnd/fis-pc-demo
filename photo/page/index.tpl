@@ -1,4 +1,4 @@
-{%extends file="page/common/layout/layout.tpl"%}
+{%extends file="common/page/layout/layout.tpl"%}
 {%block name="test"%}{%/block%}
 {%block name="main"%}
     {%require name="photo:static/index/index.css"%}
