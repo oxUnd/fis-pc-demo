@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {%html framework="common:static/lib/mod.js"%}
     {%head%}
+        <meta charset="utf-8" />
         <title>{%block name="title"%}{%$title%}{%/block%}</title>
         {%block name="meta"%}
         {%/block%}
