@@ -13,7 +13,7 @@ function smarty_compiler_html($arrParams,  $smarty){
     foreach ($arrParams as $_key => $_value) {
         $strAttr .= ' ' . $_key . '="<?php echo ' . $_value . ';?>"';
     }
-    return $strCode . "<!doctype html>\n<html{$strAttr}>";
+    return $strCode . "<html{$strAttr}>";
 }
 
 function smarty_compiler_htmlclose($arrParams,  $smarty){
