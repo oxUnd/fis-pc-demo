@@ -71,30 +71,31 @@ class FISResource {
     public static function render($type){
         $html = '';
         if ($type === 'js') {
+            $resourceMap = self::getResourceMap();
+            $loadMoadJs = (self::$framework && (self::$arrStaticCollection['js'] || $resourceMap));
             //require.resourceMap要在mod.js加载以后执行
-            if (self::$framework) {
+            if ($loadMoadJs) {
                 $html .= '<script type="text/javascript" src="' . self::$framework . '"></script>' . PHP_EOL;
             }
-            $resourceMap = self::getResourceMap();
             if ($resourceMap) {
                 $html .= '<script type="text/javascript">';
                 $html .= 'require.resourceMap('.$resourceMap.');';
                 $html .= '</script>';
             }
-        }
-        if(!empty(self::$arrStaticCollection[$type])){
-            $arrURIs = &self::$arrStaticCollection[$type];
-            if($type === 'js') {
+            if (self::$arrStaticCollection['js']) {
+                $arrURIs = &self::$arrStaticCollection['js'];
                 foreach ($arrURIs as $uri) {
                     if ($uri === self::$framework) {
                         continue;
                     }
                     $html .= '<script type="text/javascript" src="' . $uri . '"></script>' . PHP_EOL;
                 }
-            } else if($type === 'css'){
-                $html = '<link rel="stylesheet" type="text/css" href="' . implode('"/><link rel="stylesheet" type="text/css" href="', $arrURIs) . '"/>';
             }
+        } else if($type === 'css' && self::$arrStaticCollection['css']){
+            $arrURIs = &self::$arrStaticCollection['css'];
+            $html = '<link rel="stylesheet" type="text/css" href="' . implode('"/><link rel="stylesheet" type="text/css" href="', $arrURIs) . '"/>';
         }
+
         return $html;
     }
 
@@ -170,13 +171,13 @@ class FISResource {
                     foreach($map['res'] as $id => &$res) {
                         if($res['type'] !== 'tpl') {
                             $res['uri'] = $domain . $res['uri'];
-                        }                    
+                        }
                     }
                     foreach($map['pkg'] as $id => &$res) {
                         $res['uri'] = $domain . $res['uri'];
                     }
                 }
-                self::$arrMap[$strNamespace] = $map;                
+                self::$arrMap[$strNamespace] = $map;
 		        return true;
             }
         }
@@ -332,11 +333,11 @@ class FISResource {
             $strDir = preg_replace('/[\\/\\\\]+/', '/', $strDir . '/' . $domainFile);
             if(is_file($strDir)) {
                 $smarty->configLoad($domainFile);
-                $domains = $smarty->getConfigVars();  
+                $domains = $smarty->getConfigVars();
                 break;
             }
         }
         $domainValue = $domains[$domainKey] ? $domains[$domainKey] : null;
         return $domainValue;
-    } 
+    }
 }
