@@ -25,6 +25,7 @@ class FISResource {
         return self::CSS_LINKS_HOOK;
     }
 
+    //输出模板的最后，替换css hook为css标签集合
     public static function renderResponse($strContent){
         $intPos = strpos($strContent, self::CSS_LINKS_HOOK);
         if($intPos !== false){
@@ -34,10 +35,12 @@ class FISResource {
         return $strContent;
     }
 
+    //设置framewok mod.js
     public static function setFramework($strFramework) {
         self::$framework = $strFramework;
     }
 
+    //返回静态资源uri，有包的时候，返回包的uri
     public static function getUri($strName, $smarty) {
         $intPos = strpos($strName, ':');
         if($intPos === false){
@@ -64,6 +67,7 @@ class FISResource {
         return $smarty->joined_template_dir . str_replace('/template', '', self::getUri($strName, $smarty));
     }
 
+    //渲染资源，将收集到的js css，变为html标签，异步js资源变为resorce map。
     public static function render($type){
         $html = '';
         if ($type === 'js') {
@@ -98,6 +102,7 @@ class FISResource {
         self::$arrScriptPool[] = $str;
     }
 
+    //输出js，将页面的js源代码集合到pool，一起输出
     public static function renderScriptPool(){
         $html = '';
         if(!empty(self::$arrScriptPool)){
@@ -106,6 +111,7 @@ class FISResource {
         return $html;
     }
 
+    //获取异步js资源集合，变为json格式的resourcemap
     public static function getResourceMap() {
         $ret = '';
         $arrResourceMap = array();
@@ -146,6 +152,7 @@ class FISResource {
         return  $ret;
     }
 
+    //获取命名空间的map.json
     public static function register($strNamespace, $smarty){
         if($strNamespace === '__global__'){
             $strMapName = 'map.json';
@@ -156,8 +163,21 @@ class FISResource {
         foreach ($arrConfigDir as $strDir) {
             $strPath = preg_replace('/[\\/\\\\]+/', '/', $strDir . '/' . $strMapName);
             if(is_file($strPath)){
-                self::$arrMap[$strNamespace] = json_decode(file_get_contents($strPath), true);
-                return true;
+                $map = json_decode(file_get_contents($strPath), true);
+                //读取domain.conf,对所有静态资源uri根据不同url，添加domain，方便本地调试
+                $domain = self::getDomain($smarty);
+                if($domain) {
+                    foreach($map['res'] as $id => &$res) {
+                        if($res['type'] !== 'tpl') {
+                            $res['uri'] = $domain . $res['uri'];
+                        }                    
+                    }
+                    foreach($map['pkg'] as $id => &$res) {
+                        $res['uri'] = $domain . $res['uri'];
+                    }
+                }
+                self::$arrMap[$strNamespace] = $map;                
+		        return true;
             }
         }
         return false;
@@ -300,4 +320,23 @@ class FISResource {
             trigger_error(date('Y-m-d H:i:s') . '   ' . $strMessage, $errorLevel);
         }
     }
+   /**
+     * 从domain.conf文件获得domain设置
+     * 返回url(http://xxxx?domain=online)中请求的online的domain值
+     */
+    public static function getDomain($smarty) {
+        $domainFile = 'domain.conf';
+        $domainKey = $_GET['domain'] ? $_GET['domain'] : 'online';
+        $configDirs = $smarty->getConfigDir();
+        foreach($configDirs as $strDir) {
+            $strDir = preg_replace('/[\\/\\\\]+/', '/', $strDir . '/' . $domainFile);
+            if(is_file($strDir)) {
+                $smarty->configLoad($domainFile);
+                $domains = $smarty->getConfigVars();  
+                break;
+            }
+        }
+        $domainValue = $domains[$domainKey] ? $domains[$domainKey] : null;
+        return $domainValue;
+    } 
 }
