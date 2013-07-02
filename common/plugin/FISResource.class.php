@@ -114,17 +114,23 @@ class FISResource {
                 $deps = array();
                 if (!empty($arrRes['deps'])) {
                     foreach ($arrRes['deps'] as $strName) {
-                        if ($arrRes['type'] === 'css') {
-                            continue;
+                        if (preg_match('/\.js$/', $strName)) {
+                            $deps[] = $strName;
                         }
-                        $deps[] = $strName;
                     }
                 }
+
                 $arrResourceMap['res'][$id] = array(
                     'url' => $arrRes['uri'],
-                    'pkg' => isset($arrRes['pkg']) ? $arrRes['pkg'] : '',
-                    'deps' => $deps
                 );
+
+                if (!empty($arrRes['pkg'])) {
+                    $arrResourceMap['res'][$id]['pkg'] = $arrRes['pkg'];
+                }
+
+                if (!empty($deps)) {
+                    $arrResourceMap['res'][$id]['deps'] = $deps;
+                }
             }
         }
         if (isset(self::$arrRequireAsyncCollection['pkg'])) {
