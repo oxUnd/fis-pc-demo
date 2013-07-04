@@ -49,7 +49,7 @@ function smarty_compiler_widget($arrParams,  $smarty){
         $strCode .= '}else{';
     }
     if($strName){
-        $strCode .= '$_tpl_path=FISResource::load(' . $strName . ',$_smarty_tpl->smarty);';
+        $strCode .= '$_tpl_path=FISResource::getUri(' . $strName . ',$_smarty_tpl->smarty);';
         $strCode .= 'if(isset($_tpl_path)){';
         if($bHasCall){
             $strCode .= '$_smarty_tpl->getSubTemplate($_tpl_path, $_smarty_tpl->cache_id, $_smarty_tpl->compile_id, $_smarty_tpl->caching, $_smarty_tpl->cache_lifetime, ' . $strFuncParams . ', Smarty::SCOPE_LOCAL);';
@@ -64,6 +64,7 @@ function smarty_compiler_widget($arrParams,  $smarty){
         $strCode .= '}else{';
         $strCode .= 'trigger_error(\'unable to locale resource "\'.' . $strName . '.\'"\', E_USER_ERROR);';
         $strCode .= '}';
+        $strCode .= 'FISResource::load('.$strName.', $_smarty_tpl->smarty);';
     } else {
         trigger_error('undefined widget name in file "' . $smarty->_current_file . '"', E_USER_ERROR);
     }
