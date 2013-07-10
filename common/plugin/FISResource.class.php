@@ -284,7 +284,7 @@ class FISResource {
                     if ($async && $arrRes['type'] === 'js') {
                         if ($arrPkg) {
                             self::$arrRequireAsyncCollection['pkg'][$arrRes['pkg']] = $arrPkg;
-                            self::$arrRequireAsyncCollection['res'] = array_merge(self::$arrRequireAsyncCollection['res'], $arrPkgHas);
+                            self::$arrRequireAsyncCollection['res'] = array_merge((array)self::$arrRequireAsyncCollection['res'], $arrPkgHas);
                         } else {
                             self::$arrRequireAsyncCollection['res'][$strName] = $arrRes;
                         }
@@ -327,7 +327,7 @@ class FISResource {
      */
     public static function getDomain($smarty) {
         $domainFile = 'domain.conf';
-        $domainKey = $_GET['domain'] ? $_GET['domain'] : 'online';
+        $domainKey = isset($_GET['domain']) ? $_GET['domain'] : 'online';
         $configDirs = $smarty->getConfigDir();
         foreach($configDirs as $strDir) {
             $strDir = preg_replace('/[\\/\\\\]+/', '/', $strDir . '/' . $domainFile);
@@ -337,7 +337,7 @@ class FISResource {
                 break;
             }
         }
-        $domainValue = $domains[$domainKey] ? $domains[$domainKey] : null;
+        $domainValue = isset($domains[$domainKey]) ? $domains[$domainKey] : null;
         return $domainValue;
     }
 }
