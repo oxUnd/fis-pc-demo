@@ -7,7 +7,7 @@
         {%/foreach%}
     </ul>
 </div>
-{%script type="javascript"%}
+{%script %}
     var menu = require('./menu.js');
     menu.init();
 {%/script%}

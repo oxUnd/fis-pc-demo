@@ -84,7 +84,7 @@ var require, define;
         if (typeof names == 'string') {
             names = [names];
         }
-        
+
         for(var i = names.length - 1; i >= 0; --i) {
             names[i] = require.alias(names[i]);
         }
@@ -122,7 +122,7 @@ var require, define;
                 callback && callback.apply(self, args);
             }
         }
-        
+
         findNeed(names);
         updateNeed();
     };
