@@ -1,5 +1,9 @@
-<div>
-    <img src="./shell.jpeg" />
+<div id="renderBox">
+    <div class="facebook"></div>
+    <div class="chrome"></div>
+    <div class="firefox"></div>
+    <div class="repeat-x"></div>
+    
     <button id="render-btn">Click ME!</button>
     {%script type="text/javascript"%}
         document.getElementById('render-btn').onclick = function() {

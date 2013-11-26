@@ -7,3 +7,5 @@ require.async('common:widget/ui/pkg_2.js', function() {
 });
 
 require('common:widget/ui/pkg_sync_1.js');
+
+//@require.async ./comment.async.js
